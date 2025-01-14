@@ -34,6 +34,9 @@ public class App extends Application {
 
     boolean gameOver = false;
     KeyCode direction = KeyCode.RIGHT;
+    Rectangle food = new Rectangle(START_POS_X+SECTION_SIZE*2, START_POS_Y, SECTION_SIZE, SECTION_SIZE);
+    ArrayList<Rectangle> snake = new ArrayList<>();
+
     
     public static void main(String[] args) {
         launch(args);
@@ -44,8 +47,8 @@ public class App extends Application {
 
         Group root = new Group();
         Scene scene = new Scene(root, Color.BLACK);
+
         Image favicon = new Image(getClass().getResourceAsStream("/images/favicon.png"));
-        
         stage.getIcons().add(favicon);
         stage.setTitle("SNAKE");
 
@@ -56,37 +59,38 @@ public class App extends Application {
         stage.setScene(scene);
         stage.show();
         
-        ArrayList<Rectangle> snake = new ArrayList<>();
         //Creates the first segment
-        growSnake(snake, root);
+        growSnake(root);
 
-        Rectangle food = new Rectangle(START_POS_X+SECTION_SIZE*2, START_POS_Y, SECTION_SIZE, SECTION_SIZE);
+        //Color food and place it on screen
         food.setFill(Color.CRIMSON);
         root.getChildren().add(food);
+        moveFood();
 
-        moveFood(food, snake);
-
-        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.4), e -> 
+        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.2), e -> 
             {
                 if(!gameOver){
                     scene.setOnKeyPressed((KeyEvent event) -> {
-                        switch (event.getCode()) {
-                            case UP:
-                                direction = KeyCode.UP;
-                                break;
-                            case DOWN:
-                                direction = KeyCode.DOWN;
-                                break;
-                            case LEFT:
-                                direction = KeyCode.LEFT;
-                                break;
-                            case RIGHT:
-                                direction = KeyCode.RIGHT;
-                                break;
+                        KeyCode press = event.getCode();
+
+                        if(press==KeyCode.UP && direction!=KeyCode.DOWN){
+                            direction = KeyCode.UP;
+                        }else if(press==KeyCode.DOWN && direction!=KeyCode.UP){
+                            direction = KeyCode.DOWN;
+                        }else if(press==KeyCode.LEFT && direction!=KeyCode.RIGHT){
+                            direction = KeyCode.LEFT;
+                        }else if(press==KeyCode.RIGHT && direction!=KeyCode.LEFT){
+                            direction = KeyCode.RIGHT;
                         }
                     });
 
-                    moveSnake(snake, direction, food, root);
+                    moveSnake(direction, root);
+                    checkCollision();
+                    if(snake.get(0).getX()==food.getX() && snake.get(0).getY()==food.getY()){
+                        growSnake(root);
+                        moveFood();
+                    }
+                    
 
                 }
             }
@@ -97,7 +101,7 @@ public class App extends Application {
     } 
 
 
-    public void growSnake(ArrayList<Rectangle> snake, Group root){
+    public void growSnake(Group root){
         System.out.println(snake.size());
         if(snake.size()==0){
             snake.add(new Rectangle(START_POS_X, START_POS_Y, SECTION_SIZE, SECTION_SIZE));
@@ -111,7 +115,7 @@ public class App extends Application {
         }
     }
 
-    public void moveSnake(ArrayList<Rectangle> snake, KeyCode direction, Rectangle food, Group root){
+    public void moveSnake(KeyCode direction, Group root){
         //Gets the current coordinate of the head
         Rectangle head = snake.get(0);
         double[] headCoordinate = {head.getX(), head.getY()};
@@ -148,15 +152,9 @@ public class App extends Application {
             }
         }
 
-        if(head.getX()==food.getX() && head.getY()==food.getY()){
-            growSnake(snake, root);
-            moveFood(food, snake);
-        }
-
-
     }
 
-    public void moveFood(Rectangle food, ArrayList<Rectangle> snake){
+    public void moveFood(){
         Random random = new Random();
         boolean collided = false;
 
@@ -172,6 +170,18 @@ public class App extends Application {
                 }
             }
         }while(collided);
+    }
+
+    public void checkCollision(){
+        for (int i = 0; i < snake.size()-1; i++) {
+            for(int j = i+1; j < snake.size(); j++){
+                System.out.println(snake.get(i).getX() + " " + snake.get(i).getY());
+                System.out.println(snake.get(j).getX() + " " + snake.get(j).getY());
+                if(snake.get(i).getX()==snake.get(j).getX() && snake.get(i).getY()==snake.get(j).getY()){
+                    gameOver = true;
+                }
+            }
+        }
     }
 
 
